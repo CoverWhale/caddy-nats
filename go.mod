@@ -1,4 +1,4 @@
-module github.com/codegangsta/caddy-nats
+module github.com/CoverWhale/caddy-nats
 
 go 1.20
 
