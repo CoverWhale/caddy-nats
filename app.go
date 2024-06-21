@@ -3,6 +3,7 @@ package caddynats
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -61,11 +62,29 @@ func (app *App) Provision(ctx caddy.Context) error {
 }
 
 func (app *App) Start() error {
+	var conn *nats.Conn
+	var err error
+
 	// Connect to the NATS server
-	app.logger.Info("connecting via NATS context", zap.String("context", app.Context))
-	conn, err := natscontext.Connect(app.Context)
-	if err != nil {
-		return err
+	url, urlOk := os.LookupEnv("NATS_URL")
+	jwt, jwtOk := os.LookupEnv("NATS_JWT")
+	seed, seedOk := os.LookupEnv("NATS_SEED")
+
+	// rare if else
+	if jwtOk && seedOk && urlOk {
+		app.logger.Info("connecting via NATS JWT and Seed")
+		conn, err = nats.Connect(url, nats.UserJWTAndSeed(jwt, seed))
+		if err != nil {
+			return err
+		}
+
+	} else {
+		app.logger.Info("connecting via NATS context", zap.String("context", app.Context))
+		conn, err = natscontext.Connect(app.Context)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	app.logger.Info("connected to NATS server", zap.String("url", conn.ConnectedUrlRedacted()))
